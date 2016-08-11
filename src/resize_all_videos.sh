@@ -93,8 +93,8 @@ function do_conversion ()
     #echo vid_height=$vid_height
     let numpix=($vid_height * $vid_width)
     ratio=`calc_ratio $numpix $max_numpix`
-    let out_vid_width=`ratio_to_even_num $vid_width $ratio`
-    let out_vid_height=`ratio_to_even_num $vid_height $ratio`
+    local out_vid_width=`ratio_to_even_num $vid_width $ratio`
+    local out_vid_height=`ratio_to_even_num $vid_height $ratio`
     local ffmpeg_write_opt="-n"
     if [ -e $output_dir/$output_file ]; then
       if [ "${force_overwrite}"="yes" ]
@@ -102,7 +102,7 @@ function do_conversion ()
         local ffmpeg_write_opt="-y"
       fi
     fi
-    ffmpeg -i $input_file -strict -2 $ffmpeg_write_opt -vf scale=$out_vid_width:$out_vid_height $output_dir/$output_file
+    ffmpeg -i $input_file -strict -2 $ffmpeg_write_opt -loglevel warning -vf scale=$out_vid_width:$out_vid_height $output_dir/$output_file
 }
 
 TEMP=$(getopt -o i:o:hf --long input:,output-folder:,help,force \

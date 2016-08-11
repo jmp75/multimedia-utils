@@ -41,7 +41,22 @@ done
 
 ## Other information
 
+Getting the resolution information of a video file:
+
 ```sh
 ffprobe -v quiet -print_format flat -show_streams filename.mp4 | grep "\.width"
 ```
+
+Command line tools to edit video metadata files; there may not be that many actually. Not sure easytag got things right. However mp4tags was handy; comes with the following Debian package:
+
+```sh
+sudo apt-get install mp4v2-utils```
+
+And handy to write metadata in a bunch of files:
+
+```sh
+my_dir=~/Videos/Dance/Zouk/Casa_do_Zouk2015
+mp4tags -A "Casa do Zouk 2015" -c "Casa do Zouk 2015" -e "J-M" -g "Zouk" -i "movie" -l "Workshops at Casa do Zouk 2015" -m "Workshops at Casa do Zouk 2015" -O "Dance" -y 2015 ${my_dir}/*.mp4
+```sh
+
 
