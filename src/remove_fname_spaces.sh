@@ -20,7 +20,7 @@ function replace_spaces()
 fname="$1"
 newfname=`replace_spaces "$fname"`
 
-if [ "${newfname}" = "${fname}" ]
+if [ "${newfname}" == "${fname}" ]
 then
   echo "Nothing to do for ${fname}"
 else

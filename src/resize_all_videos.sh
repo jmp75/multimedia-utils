@@ -13,7 +13,7 @@ function get_width()
 {
   local fname="$1"
   local vid_width=`ffprobe -v quiet -print_format flat -show_streams ${fname} | grep "\.width"`
-  local vid_width=`echo $vid_width | sed -e 's/streams.stream.0.width=//g'`
+  local vid_width=`echo $vid_width | sed -e 's/.*stream.*\.width\=//g'`
   echo $vid_width
 }
 
@@ -21,8 +21,20 @@ function get_height()
 {
   local fname="$1"
   local vid_height=`ffprobe -v quiet -print_format flat -show_streams ${fname} | grep "\.height"`
-  local vid_height=`echo $vid_height | sed -e 's/streams.stream.0.height=//g'`
+  local vid_height=`echo $vid_height | sed -e 's/.*stream.*\.height\=//g'`
   echo $vid_height
+}
+
+function has_90_rotation()
+{
+  local fname="$1"
+  local rot_ninety=`ffprobe -v quiet -print_format flat -show_streams ${fname} | grep ".*rotation.*90"`
+  if [ "${rot_ninety}" != "" ]
+  then
+    echo "yes"
+  else
+    echo "no"
+  fi
 }
 
 function calc_ratio()
@@ -79,7 +91,7 @@ function do_conversion ()
 {
 # https://trac.ffmpeg.org/wiki/Scaling%20%28resizing%29%20with%20ffmpeg
     input_file=$1
-    echo Processing $input_file
+    echo "Processing $input_file..."
     filename=$(basename "$input_file")
     extension="${input_file##*.}"
     output_file="${filename%.*}"_resize.mp4 
@@ -87,21 +99,35 @@ function do_conversion ()
     if [ ! -e ${output_dir} ]; then
       mkdir -p ${output_dir};
     fi
+    if [ -e $output_dir/$output_file ]; then
+      if [ "${force_overwrite}" != "yes" ]
+      then
+        echo "$output_dir/$output_file already exists, and options says not to overwrite it"
+        return
+      fi
+    fi
+    local ffmpeg_write_opt="-n"
+    if [ "${force_overwrite}" != "yes" ]
+    then
+      local ffmpeg_write_opt="-y"
+    fi
     local vid_width=`get_width $input_file`
-    local vid_height=`get_height $input_file`
+    local vid_height=`get_height $input_file` 
     #echo vid_width=$vid_width
     #echo vid_height=$vid_height
     let numpix=($vid_height * $vid_width)
     ratio=`calc_ratio $numpix $max_numpix`
     local out_vid_width=`ratio_to_even_num $vid_width $ratio`
     local out_vid_height=`ratio_to_even_num $vid_height $ratio`
-    local ffmpeg_write_opt="-n"
-    if [ -e $output_dir/$output_file ]; then
-      if [ "${force_overwrite}"="yes" ]
-      then
-        local ffmpeg_write_opt="-y"
-      fi
+    local has_rot=`has_90_rotation $input_file`
+    if [ "$has_rot" == "yes" ]
+    then
+      echo "    NOTE: 90 degree rotation detected..."
+      local tmpswap=$out_vid_width
+      local out_vid_width=$out_vid_height
+      local out_vid_height=$tmpswap
     fi
+    echo "    ${vid_width}x${vid_height} ==> ${out_vid_width}x${out_vid_height}"
     ffmpeg -i $input_file -strict -2 $ffmpeg_write_opt -loglevel warning -vf scale=$out_vid_width:$out_vid_height $output_dir/$output_file
 }
 
